@@ -9,9 +9,9 @@ from PyInstaller.utils.hooks import collect_data_files, collect_submodules
 
 block_cipher = None
 
-# 获取项目根目录
-script_dir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe()))) if 'inspect' in dir() else os.getcwd()
-PROJECT_ROOT = Path(script_dir)
+# 获取项目根目录（使用 sys.argv[0] 而非 __file__ 或 inspect）
+script_dir = Path(sys.argv[0]).parent.resolve()
+PROJECT_ROOT = script_dir
 
 # Web 资源文件
 web_assets = ['index.html', 'game.js', 'style.css', 'qwebchannel.js']

@@ -10,12 +10,14 @@
     pyinstaller jieqin_game_macos.spec
     # 产物: dist/jieqin_game.app
 """
+import sys
 from pathlib import Path
 from PyInstaller.utils.hooks import collect_all
 
 # ── 路径配置 ─────────────────────────────────────────────
 # 获取 spec 文件所在目录（即项目根目录）
-SPEC_DIR = Path(__file__).parent.resolve()
+# PyInstaller 6.x 中 __file__ 不再可用，改用 sys.argv[0]
+SPEC_DIR = Path(sys.argv[0]).parent.resolve()
 PROJECT_ROOT = SPEC_DIR
 
 # ── Web 静态资源 ──────────────────────────────────────────

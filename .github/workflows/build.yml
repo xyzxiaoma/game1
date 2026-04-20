@@ -77,7 +77,6 @@ jobs:
             --exclude-module=numpy \
             --exclude-module=pandas \
             --exclude-module=scipy \
-            -- \
             py/main.py
 
       - name: Verify app bundle

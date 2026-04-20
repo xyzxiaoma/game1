@@ -10,7 +10,6 @@ on:
   workflow_dispatch:
 
 env:
-  PROJECT_DIR: project
   SPEC_FILE: jieqin_game_macos.spec
   APP_NAME: jieqin_game
 
@@ -40,7 +39,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/Library/Caches/pip
-          key: pip-macos-${{ matrix.runs-on }}-${{ hashFiles('${{ env.PROJECT_DIR }}/requirements.txt') }}
+          key: pip-macos-${{ matrix.runs-on }}-${{ hashFiles('requirements.txt') }}
           restore-keys: |
             pip-macos-${{ matrix.runs-on }}-
 
@@ -50,48 +49,36 @@ jobs:
           pip install pyinstaller PyQt6 tinycc
 
       - name: Build with PyInstaller
-        working-directory: ${{ env.PROJECT_DIR }}
         env:
           QT_QPA_PLATFORM: offscreen
         run: |
           python -m PyInstaller "${{ env.SPEC_FILE }}" --noconfirm
 
-      - name: Fix Qt WebEngine process permissions
-        working-directory: ${{ env.PROJECT_DIR }}
+      - name: Verify app bundle
         run: |
-          $app = "dist/${{ env.APP_NAME }}.app"
-          if (Test-Path $app) {
-            echo "Verifying app bundle structure..."
-            Get-ChildItem $app -Recurse -Filter "QtWebEngineProcess*" | ForEach-Object {
-              echo "Found: $($_.FullName)"
-            }
-            Get-ChildItem $app/Contents/Frameworks -ErrorAction SilentlyContinue | ForEach-Object {
-              echo "Framework: $($_.Name)"
-            }
-          } else {
-            Write-Host "ERROR: App not found"
-            Get-ChildItem dist/ -ErrorAction SilentlyContinue
+          APP="dist/${{ env.APP_NAME }}.app"
+          if [ -d "$APP" ]; then
+            echo "App bundle found:"
+            ls -la "$APP"
+            echo ""
+            echo "Contents/Frameworks:"
+            ls -la "$APP/Contents/Frameworks/" 2>/dev/null || echo "No Frameworks dir"
+            echo ""
+            echo "MacOS binary:"
+            ls -la "$APP/Contents/MacOS/" 2>/dev/null || echo "No MacOS dir"
+            SIZE=$(du -sh "$APP" | cut -f1)
+            echo "App size: $SIZE"
+          else
+            echo "ERROR: App not found at $APP"
+            ls -la dist/
             exit 1
-          }
-
-      - name: Verify and show build output
-        working-directory: ${{ env.PROJECT_DIR }}
-        run: |
-          $app = "dist/${{ env.APP_NAME }}.app"
-          if (Test-Path $app) {
-            $size = [math]::Round((Get-ChildItem $app -Recurse | Measure-Object -Property Length -Sum).Sum / 1MB, 2)
-            echo "SUCCESS: $app ($size MB)"
-          } else {
-            Write-Host "ERROR: App bundle not found"
-            Get-ChildItem dist/ -ErrorAction SilentlyContinue
-            exit 1
-          }
+          fi
 
       - name: Upload App artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.APP_NAME }}-macos-${{ matrix.arch }}
-          path: ${{ env.PROJECT_DIR }}/dist/${{ env.APP_NAME }}.app
+          path: dist/${{ env.APP_NAME }}.app
           retention-days: 30
 
   build-universal:

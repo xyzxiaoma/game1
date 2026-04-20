@@ -48,11 +48,37 @@ jobs:
           pip install --upgrade pip setuptools wheel
           pip install pyinstaller PyQt6 tinycc
 
-      - name: Build with PyInstaller
+      - name: Build with PyInstaller (onedir mode)
         env:
           QT_QPA_PLATFORM: offscreen
         run: |
-          python -m PyInstaller "${{ env.SPEC_FILE }}" --noconfirm
+          python -m PyInstaller \
+            --name=jieqin_game \
+            --onedir \
+            --windowed \
+            --osx-bundle-identifier=com.jieqin.game \
+            --add-data=index.html:. \
+            --add-data=game.js:. \
+            --add-data=style.css:. \
+            --add-data=qwebchannel.js:. \
+            --add-data=imgs:imgs \
+            --hidden-import=PyQt6 \
+            --hidden-import=PyQt6.QtWidgets \
+            --hidden-import=PyQt6.QtWebEngineWidgets \
+            --hidden-import=PyQt6.QtWebChannel \
+            --hidden-import=PyQt6.QtCore \
+            --hidden-import=PyQt6.QtGui \
+            --hidden-import=PyQt6.sip \
+            --hidden-import=tinycc \
+            --hidden-import=tinycc.compile \
+            --collect-all=PyQt6 \
+            --collect-all=tinycc \
+            --exclude-module=matplotlib \
+            --exclude-module=numpy \
+            --exclude-module=pandas \
+            --exclude-module=scipy \
+            -- \
+            py/main.py
 
       - name: Verify app bundle
         run: |
@@ -70,7 +96,15 @@ jobs:
             echo "App size: $SIZE"
           else
             echo "ERROR: App not found at $APP"
+            echo "Checking dist contents:"
             ls -la dist/
+            echo ""
+            echo "Checking for onedir output (no .app suffix):"
+            if [ -d "dist/${{ env.APP_NAME }}" ]; then
+              echo "Found dist/${{ env.APP_NAME }} (onedir mode)"
+              echo "Checking Contents:"
+              ls -la "dist/${{ env.APP_NAME }}/Contents/" 2>/dev/null || echo "No Contents dir"
+            fi
             exit 1
           fi
 
